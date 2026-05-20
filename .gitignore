@@ -1,0 +1,7 @@
+.env
+node_modules
+raw
+audio
+rewritten
+dist
+logs
