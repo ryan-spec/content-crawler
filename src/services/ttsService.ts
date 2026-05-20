@@ -4,29 +4,77 @@ import path from 'path';
 import { config } from '../config/config';
 import { logger } from '../utils/logger';
 import { FPTTTSResponse, FPTPollResponse } from '../types/fpt';
+import { SegmentType } from '../types';
 
 const FPT_API_URL = 'https://api.fpt.ai/hmi/tts/v5';
 
 // Sleep utility
 const delay = (ms: number) => new Promise(res => setTimeout(res, ms));
 
-export const generateAudio = async (text: string, id: string): Promise<boolean> => {
+/**
+ * Returns the best voice and speed configuration for a given segment type.
+ * Automatically switches voice based on default voice in config to create male/female contrast!
+ */
+export const getVoiceConfigForSegmentType = (type: SegmentType): { voice: string; speed: string } => {
+  const defaultVoice = config.fpt.voice || 'banmai';
+  const defaultSpeed = config.fpt.speed || '0';
+
+  // Determine contrasting voice (commenters get a different narrator voice)
+  let contrastingVoice = 'minhquang'; // Default male narrator contrast
+  if (defaultVoice === 'minhquang' || defaultVoice === 'leminh') {
+    contrastingVoice = 'banmai'; // Use female if default is male
+  } else {
+    contrastingVoice = 'leminh'; // Use male if default is female
+  }
+
+  switch (type) {
+    case 'hook':
+    case 'reveal':
+      return { voice: defaultVoice, speed: defaultSpeed }; // Energetic opening
+    case 'story':
+      return { voice: defaultVoice, speed: defaultSpeed }; // Standard storytelling
+    case 'transition':
+      return { voice: defaultVoice, speed: defaultSpeed };
+    case 'comment':
+      return { voice: contrastingVoice, speed: defaultSpeed }; // Commenters get contrasting voice!
+    case 'ending':
+    case 'question':
+      return { voice: defaultVoice, speed: '-1' }; // Slower speed for emotional ending pacing
+    default:
+      return { voice: defaultVoice, speed: defaultSpeed };
+  }
+};
+
+/**
+ * Generates an audio file from text using FPT AI TTS.
+ * Supports custom voice and speed specifications.
+ */
+export const generateAudio = async (
+  text: string,
+  outputPath: string,
+  voice?: string,
+  speed?: string
+): Promise<boolean> => {
   if (!config.fpt.apiKey) {
     logger.error('No FPT API Key provided.');
     return false;
   }
 
+  const selectedVoice = voice || config.fpt.voice || 'banmai';
+  const selectedSpeed = speed || config.fpt.speed || '0';
+
   try {
+    logger.info(`Sending TTS request for text: "${text.substring(0, 40)}..." [Voice: ${selectedVoice}, Speed: ${selectedSpeed}]`);
+    
     // 1. Send text to FPT API
-    logger.info(`Sending text to FPT TTS for ID: ${id}`);
     const response = await axios.post<FPTTTSResponse>(
       FPT_API_URL,
       text,
       {
         headers: {
           'api-key': config.fpt.apiKey,
-          'speed': config.fpt.speed,
-          'voice': config.fpt.voice,
+          'speed': selectedSpeed,
+          'voice': selectedVoice,
           'Content-Type': 'text/plain' // FPT expects raw text
         }
       }
@@ -38,7 +86,7 @@ export const generateAudio = async (text: string, id: string): Promise<boolean> 
     }
 
     const asyncUrl = response.data.async;
-    logger.info(`Audio is generating. Polling URL: ${asyncUrl}`);
+    logger.info(`FPT Audio is generating... Polling URL: ${asyncUrl}`);
 
     // 2. Poll the URL until it is ready
     let audioUrl = '';
@@ -48,30 +96,24 @@ export const generateAudio = async (text: string, id: string): Promise<boolean> 
     while (retries < maxRetries) {
       await delay(3000); // Poll every 3 seconds
 
-      // FPT simply returns the original URL but as a redirect to MP3 or returns JSON if not ready yet
-      // Sometimes it returns a 200 OK with JSON until ready.
-      // Another way is to check the header or content type.
-      
       try {
         const pollResponse = await axios.get(asyncUrl, {
           headers: { 'api-key': config.fpt.apiKey },
-          validateStatus: (status) => status < 400 // Accept 200 and 300 level redirects
+          validateStatus: (status) => status < 400
         });
 
-        // If the content type is audio, it's ready. If it's JSON, it might still be processing.
+        // If the content type is audio, it's ready.
         if (pollResponse.headers['content-type'] === 'audio/mpeg') {
-          // Download it directly
           audioUrl = asyncUrl;
           break;
         }
 
         const pollData = pollResponse.data as FPTPollResponse;
         if (pollData && pollData.error === 0 && pollData.message.startsWith('http')) {
-          audioUrl = pollData.message; // FPT sometimes provides the URL in the message field
+          audioUrl = pollData.message;
           break;
         }
       } catch (pollErr: any) {
-        // If FPT throws an error during polling (or redirects and we follow), handle appropriately
         if (pollErr.response?.headers?.['content-type'] === 'audio/mpeg') {
            audioUrl = asyncUrl;
            break;
@@ -83,25 +125,24 @@ export const generateAudio = async (text: string, id: string): Promise<boolean> 
     }
 
     if (!audioUrl) {
-      logger.error(`Timeout waiting for FPT TTS audio for ID: ${id}`);
+      logger.error(`Timeout waiting for FPT TTS audio.`);
       return false;
     }
 
     // 3. Download the MP3
-    logger.info(`Downloading audio from ${audioUrl}`);
-    const audioPath = path.join(config.folders.audio, `${id}.mp3`);
-    
+    logger.info(`Downloading audio from ${audioUrl} into ${outputPath}`);
     const downloadResponse = await axios.get(audioUrl, {
       responseType: 'arraybuffer'
     });
 
-    await fs.writeFile(audioPath, downloadResponse.data);
-    logger.info(`Audio saved to ${audioPath}`);
+    await fs.ensureDir(path.dirname(outputPath));
+    await fs.writeFile(outputPath, downloadResponse.data);
+    logger.info(`Audio saved successfully to ${outputPath}`);
 
     return true;
 
   } catch (error: any) {
-    logger.error(`Error generating audio for ID: ${id}`, error.response?.data || error.message);
+    logger.error(`Error generating audio:`, error.response?.data || error.message);
     return false;
   }
 };

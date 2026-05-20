@@ -21,9 +21,7 @@ export const config = {
   // Folders relative to project root
   folders: {
     data: path.resolve(process.cwd(), 'data'),
-    raw: path.resolve(process.cwd(), 'data', 'raw'),
-    rewritten: path.resolve(process.cwd(), 'data', 'rewritten'),
-    audio: path.resolve(process.cwd(), 'data', 'audio'),
+    stories: path.resolve(process.cwd(), 'data', 'stories'),
     logs: path.resolve(process.cwd(), 'logs'),
   },
   
