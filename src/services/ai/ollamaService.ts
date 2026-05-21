@@ -42,7 +42,11 @@ export const callLLM = async (
       return response.data.choices[0].message.content.trim();
     } catch (error: any) {
       attempt++;
-      logger.error(`LLM Call failed (Attempt ${attempt}): ${error.message}`);
+      let errorDetails = error.message;
+      if (axios.isAxiosError(error) && error.response) {
+        errorDetails = `Status ${error.response.status} - ${JSON.stringify(error.response.data)}`;
+      }
+      logger.error(`LLM Call failed (Attempt ${attempt}): ${errorDetails}`);
       if (attempt > retries) {
         return null;
       }
