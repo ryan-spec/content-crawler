@@ -160,31 +160,44 @@ Focus of this Segment: ${currentItem.focus}
 
 ---
 CRITICAL TRANSLATION & NARRATION RULES (QUY TẮC BẮT BUỘC):
-- Write in a slow-paced, deeply personal, and highly emotional first-person tone (use "Tôi" or "Mình" for narration).
-- Toàn bộ nội dung kể chuyện (trường "text") phải bằng tiếng Việt thuần túy. KHÔNG dùng từ tiếng Anh.
-- QUY TẮC DỊCH THUẬT QUAN HỆ & GIỚI TÍNH:
-  - "boyfriend" hoặc "bf" trong câu chuyện gốc PHẢI được dịch đúng là "bạn trai" hoặc "người yêu" (tuyệt đối KHÔNG được dịch thành "anh trai", "em trai", "bố").
-  - "girlfriend" hoặc "gf" trong câu chuyện gốc PHẢI được dịch đúng là "bạn gái" hoặc "người yêu" (tuyệt đối KHÔNG được dịch thành "chị gái", "em gái").
-- QUY TẮC DỊCH THUẬT SLANG, IDIOMS & CỤM TỪ NGỮ CẢNH:
-  - Dịch tự nhiên các tiếng lóng (slang), ngôn ngữ mạng (internet phrases), thành ngữ sang tiếng Việt. KHÔNG được để nguyên từ tiếng Anh gốc và KHÔNG dịch thô sát từng từ.
-  - Các trường hợp cụ thể:
-    * "give a swirly" / "give me a swirly" -> "dí đầu vào bồn cầu", "ấn đầu xuống toilet xả nước", "ấn đầu vào bồn cầu".
-    * "gaslighting" -> "thao túng tâm lý".
-    * "red flag" -> "đầy dấu hiệu toxic", "cờ đỏ cảnh báo".
-    * "creepy" -> "rợn người", "ghê ghê".
-    * "loser" -> "thảm hại", "đúng kiểu thất bại".
-    * "karma hit him" -> "quả báo tới nhanh".
-    * "he snapped" -> "anh ta nổi điên", "anh ta bùng nổ".
-    * "clingy" -> "bám người quá mức".
-    * "walked all over me" -> "coi tôi như trò hề", "chà đạp lên tôi".
-- Sử dụng xưng hô đối thoại tự nhiên: Khi đối thoại, tương tác PHẢI dùng các đại từ xưng hô tiếng Việt tự nhiên và đúng ngữ cảnh giới tính/đối tượng (ví dụ: "anh" - "em", "vợ" - "chồng", "mày" - "tao" khi giận dữ). Tuyệt đối không xưng hô "Tôi" hay "Mình" máy móc trong hội thoại.
-- Biểu đạt hội thoại có cảm xúc (Dialogue System): Sử dụng các động từ biểu cảm hành động thay vì chỉ viết "anh ấy nói/cô ấy nói", ví dụ: quát, gắt lên, hét lên, thì thầm, nghẹn giọng, nói nhỏ, cười nhạt, thở dài, lẩm bẩm, buột miệng, đứng chết lặng,...
-- Nhịp điệu cơ thể (Human Rhythm): Sử dụng dấu ba chấm "..." để tạo nhịp dừng tự nhiên, ngập ngừng, suy nghĩ dang dở, tăng sự kịch tính.
-- Độ dài (Pacing): Segment này PHẢI dài từ 80 đến 150 từ tiếng Việt để đảm bảo nội dung chi tiết, sâu sắc và truyền tải trọn vẹn mạch truyện.
-- KHÔNG BAO GỒM bất kỳ ý kiến cá nhân nào của khán giả, KHÔNG bao gồm phản ứng của internet. Focus 100% vào cốt truyện.
-- Return ONLY the raw Vietnamese text for this segment. Do NOT wrap in markdown code blocks, do NOT write JSON, and do NOT include any introductory or concluding remarks. Just return the story text.`;
+- REALISM RULES (VERY IMPORTANT):
+  * The story MUST feel like a real Reddit confession/storytelling post.
+  * DO NOT write like a novel, poetry, philosophical writing, Netflix drama, or fanfiction.
+  * The narration should feel like someone casually but emotionally telling a real experience online.
+  * PRIORITIZE: realistic scenes, awkward interactions, believable dialogue, uncomfortable silence, small human details, emotional realism, grounded storytelling.
+  * AVOID: dramatic metaphors, excessive inner monologue, philosophical sadness, constant emotional descriptions, repetitive trauma narration, overly cinematic writing, unrealistic coincidences, soap opera twists, celebrity family reveals, giant plot twists every segment.
+  * The story should revolve around ONE main emotional conflict only. Do NOT keep introducing new dramatic reveals.
+  * GOOD REDDIT DRAMA: family tension, awkward dinners, passive aggressive parents, uncomfortable phone calls, discovering old letters/photos/messages, silent resentment, emotional neglect, betrayal, realistic arguments.
+  * BAD DRAMA: everyone is secretly famous, unrealistic DNA reveals, constant screaming, multiple giant twists, overly evil characters, anime-style emotional writing.
+- FOCUS & RATIO:
+  * Focus on EVENTS and INTERACTIONS first. Emotion should come naturally from scenes.
+  * Use this ratio: 70% real events/actions, 20% dialogue/interactions, 10% emotional reflection. (NOT 80% emotional narration).
+  * EVERY SEGMENT MUST CONTAIN AT LEAST: one real action OR one realistic interaction OR one concrete event.
+  * Examples of GOOD storytelling: sitting in the car outside the hospital, hearing dishes in the kitchen, checking old Facebook photos, awkward silence during dinner, reading old text messages, someone changing the topic, a parent avoiding eye contact.
+- CHARACTER WRITING RULES:
+  * Characters must behave consistently. Avoid dramatic villain speeches, sudden personality changes, overly theatrical reactions.
+  * Most real people: avoid direct confrontation, downplay emotions, speak indirectly, say less than they actually feel.
+- DIALOGUE RULES:
+  * Dialogue must sound natural Vietnamese. Avoid robotic emotional lines, overly formal speech, translated-English structure, repetitive dramatic wording.
+  * Use: short interruptions, unfinished sentences, awkward pauses, casual spoken Vietnamese.
+- IMPORTANT VIETNAMESE PRONOUN RULES:
+  * Use proper Vietnamese pronouns based on age and relationship.
+  * father -> "ông ấy", "bố tôi" | older middle-aged man -> "ông ấy" | boyfriend/husband/young adult male -> "anh ấy" | mother -> "bà ấy", "mẹ tôi" | older woman -> "bà ấy".
+  * DO NOT incorrectly call fathers or elderly men "anh ấy". Maintain pronoun consistency throughout the story.
+  * "boyfriend" / "bf" MUST be translated as "bạn trai" / "người yêu" (NEVER "anh trai", "em trai", "bố").
+  * "girlfriend" / "gf" MUST be translated as "bạn gái" / "người yêu" (NEVER "chị gái", "em gái").
+- PACING RULES:
+  * Do NOT make every segment equally dramatic.
+  * Some scenes should feel: quiet, awkward, casual, emotionally restrained, uncomfortable.
+  * Build tension slowly and naturally. The story should feel messy, human, imperfect, believable.
+- TRANSLATION & FORMATTING:
+  * Translate slang and internet phrases naturally into Vietnamese (e.g. "gaslighting" -> "thao túng tâm lý", "red flag" -> "dấu hiệu độc hại", "creepy" -> "rợn người", "loser" -> "thảm hại", "karma hit him" -> "quả báo").
+  * Use "..." for natural human rhythm, pauses, and incomplete thoughts.
+  * Length: This segment MUST be between 80 to 150 Vietnamese words.
+  * NO internet reactions or audience commentary. Focus 100% on the story.
+  * Return ONLY the raw Vietnamese text for this segment. Do NOT wrap in markdown code blocks, do NOT write JSON, and do NOT include any introductory or concluding remarks. Just return the story text.`;
 
-  const systemPrompt = `You are a master relationship drama and emotional narrator. Output ONLY the raw Vietnamese narration text for this segment, with no markdown formatting, no JSON, and no descriptions.`;
+  const systemPrompt = `You are a raw, realistic Reddit storyteller. Output ONLY the raw Vietnamese narration text for this segment, with no markdown formatting, no JSON, and no descriptions.`;
 
   logger.info(`[Long Form Generator] [Stage 3] Generating segment ${currentIdx + 1}/${outline.outline.length}: ${currentItem.id} (${currentItem.type})`);
   const response = await callLLM(prompt, systemPrompt, 0.8, 1);

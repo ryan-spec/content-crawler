@@ -91,7 +91,7 @@ export const generateAudio = async (
     // 2. Poll the URL until it is ready
     let audioUrl = '';
     let retries = 0;
-    const maxRetries = 20; // 20 * 3 seconds = 60 seconds max
+    const maxRetries = 60; // 60 * 3 seconds = 180 seconds max
 
     while (retries < maxRetries) {
       await delay(3000); // Poll every 3 seconds
