@@ -156,75 +156,93 @@ export const generateStorySegments = async (story: Story, useComments: boolean):
 
   const prompt = `You are a high-retention TikTok narration writer. Rewrite this Reddit story into segment-based story scenes in Vietnamese.
   
-STORY TITLE: ${story.title}
-SUBREDDIT: r/${story.subreddit || 'unknown'}
-STORY CONTENT:
-${story.content}
-${commentsSection}
+    STORY TITLE: ${story.title}
+    SUBREDDIT: r/${story.subreddit || 'unknown'}
+    STORY CONTENT:
+    ${story.content}
+    ${commentsSection}
 
-STYLE REQUIREMENTS:
-${promptConfig.styleInstructions}
+    STYLE REQUIREMENTS:
+    ${promptConfig.styleInstructions}
 
-QUY TẮC BẮT BUỘC:
-- Toàn bộ nội dung kể chuyện (trường "text") phải bằng tiếng Việt thuần túy. KHÔNG dùng từ tiếng Anh.
-- Sử dụng xưng hô linh hoạt và tự nhiên: Khi dẫn chuyện (narrator) thì dùng ngôi thứ nhất ("Tôi" hoặc "Mình"). Tuy nhiên, trong các câu thoại, tương tác, hoặc khi nhắc đến nhân vật khác, PHẢI dùng các đại từ xưng hô tiếng Việt tự nhiên và đúng ngữ cảnh giới tính/độ tuổi/mối quan hệ của câu chuyện gốc (ví dụ: "anh" - "em", "vợ" - "chồng", "tao" - "mày"). Tuyệt đối không lạm dụng "Tôi" hay "Mình" máy móc trong các câu thoại trực tiếp hoặc gián tiếp dẫn đến hiểu sai nghĩa câu chuyện gốc (ví dụ: Boyfriend hỏi Girlfriend "Em có nghĩ anh béo không?" chứ không được viết là "Em có nghĩ mình béo không?").
-- Dùng dấu ba chấm "..." để tạo các nhịp dừng tự nhiên và tăng độ tò mò.
-- Câu nói tự nhiên như văn nói, KHÔNG viết như báo chí hay báo cáo.
-- Tránh các từ sáo rỗng/robot: "bàng hoàng", "kinh hoàng", "gây sốc", "tóm lại", "tóm tắt".
-- Kịch bản được phân rã thành các scene/segment ngắn có nhịp độ dồn dập (pacing).
-- Mỗi segment có "text" khoảng 15-40 từ để giữ nhịp ngắn, dễ đọc và tạo phụ đề snappy.
+    QUY TẮC BẮT BUỘC:
+    - Toàn bộ nội dung kể chuyện (trường "text") phải bằng tiếng Việt thuần túy. KHÔNG dùng từ tiếng Anh.
+    - QUY TẮC DỊCH THUẬT QUAN HỆ & GIỚI TÍNH:
+      - "boyfriend" hoặc "bf" trong câu chuyện gốc PHẢI được dịch đúng là "bạn trai" hoặc "người yêu" (tuyệt đối KHÔNG được dịch thành "anh trai", "em trai", "bố").
+      - "girlfriend" hoặc "gf" trong câu chuyện gốc PHẢI được dịch đúng là "bạn gái" hoặc "người yêu" (tuyệt đối KHÔNG được dịch thành "chị gái", "em gái").
+      - Phải phân tích kỹ độ tuổi và giới tính ở tiêu đề gốc (ví dụ: "My (24f) boyfriend's friends..." tức người kể chuyện "24f" là nữ, bạn trai của cô ấy là nam) để dịch đại từ xưng hô cho chuẩn xác và hợp lý nhất trong tiếng Việt.
+    - QUY TẮC DỊCH THUẬT SLANG, IDIOMS & CỤM TỪ NGỮ CẢNH (TRANSLATION RULES):
+      - Dịch tự nhiên các tiếng lóng (slang), ngôn ngữ mạng (internet phrases), thành ngữ, từ bắt nạt/chọc ghẹo, xúc phạm nhẹ sang tiếng Việt. KHÔNG được để nguyên từ tiếng Anh gốc và KHÔNG dịch thô sát từng từ (word-by-word). Ưu tiên ý nghĩa cảm xúc và bối cảnh hơn là nghĩa đen từ điển.
+      - Các trường hợp cụ thể PHẢI tuân thủ:
+        * "give a swirly" / "give me a swirly" -> "dí đầu vào bồn cầu", "ấn đầu xuống toilet xả nước", "ấn đầu vào bồn cầu".
+        * "gaslighting" -> "thao túng tâm lý".
+        * "red flag" -> "đầy dấu hiệu toxic", "cờ đỏ cảnh báo".
+        * "creepy" -> "rợn người", "ghê ghê".
+        * "loser" -> "thảm hại", "đúng kiểu thất bại".
+        * "karma hit him" -> "quả báo tới nhanh".
+        * "he snapped" -> "anh ta nổi điên", "anh ta bùng nổ".
+        * "clingy" -> "bám người quá mức".
+        * "awkward silence" -> "im lặng đến ngượng".
+        * "walked all over me" -> "coi tôi như trò hề", "chà đạp lên tôi".
+      - Luôn xác định tông giọng (tone), cảm xúc và bối cảnh xã hội/mối quan hệ để dịch thoát ý tự nhiên, mượt mà và thân thiện với người xem TikTok Việt Nam.
+    - Sử dụng xưng hô linh hoạt và tự nhiên: Khi dẫn chuyện (narrator) thì dùng ngôi thứ nhất ("Tôi" hoặc "Mình"). Tuy nhiên, trong các câu thoại, tương tác, hoặc khi nhắc đến nhân vật khác, PHẢI dùng các đại từ xưng hô tiếng Việt tự nhiên và đúng ngữ cảnh giới tính/độ tuổi/mối quan hệ của câu chuyện gốc (ví dụ: "anh" - "em", "vợ" - "chồng", "tao" - "mày"). Tuyệt đối không lạm dụng "Tôi" hay "Mình" máy móc trong các câu thoại trực tiếp hoặc gián tiếp dẫn đến hiểu sai nghĩa câu chuyện gốc (ví dụ: Boyfriend hỏi Girlfriend "Em có nghĩ anh béo không?" chứ không được viết là "Em có nghĩ mình béo không?").
+    - Dùng dấu ba chấm "..." để tạo các nhịp dừng tự nhiên và tăng độ tò mò.
+    - Câu nói tự nhiên như văn nói, KHÔNG viết như báo chí hay báo cáo.
+    - Tránh các từ sáo rỗng/robot: "bàng hoàng", "kinh hoàng", "gây sốc", "tóm lại", "tóm tắt".
+    - Kịch bản được phân rã thành các scene/segment ngắn có nhịp độ dồn dập (pacing).
+    - Mỗi segment có "text" khoảng 15-40 từ để giữ nhịp ngắn, dễ đọc và tạo phụ đề snappy.
 
-COMMENT RULES (ONLY if community comments are provided above):
-- KHÔNG tạo phân đoạn dẫn nhập bình luận (\`comment_intro\` / \`transition\`). Bỏ hoàn toàn loại segment này.
-- Kịch bản cốt truyện chính phải được kể HOÀN TOÀN LIÊN TỤC từ đầu đến cuối (Hook -> các segment Story liên tục).
-- TUYỆT ĐỐI KHÔNG xen kẽ bình luận (Comment) vào giữa các phân đoạn câu chuyện chính.
-- Toàn bộ các bình luận (Comment) phải được xếp LIÊN TIẾP và đặt ở phần CUỐI của kịch bản (ngay sau phân đoạn cốt truyện chính cuối cùng và ngay trước phân đoạn Ending).
-- Dịch các comment tự nhiên sang tiếng Việt, có thể lược bớt để ngắn gọn nhưng GIỮ NGUYÊN cảm xúc thô mộc, chân thực của internet (ví dụ phản ứng giận dữ, bênh vực, khuyên nhủ). KHÔNG viết tóm tắt robot.
-- Xưng hô trong comment phải tự nhiên và phù hợp với giới tính/vai vế của người viết/người đọc (ví dụ: dùng "chủ thớt", "bạn", "OP" hoặc gọi thân mật "em", "chị", "chủ post", "ông này", "bà này" tùy ngữ cảnh câu chuyện).
+    COMMENT RULES (ONLY if community comments are provided above):
+    - KHÔNG tạo phân đoạn dẫn nhập bình luận (\`comment_intro\` / \`transition\`). Bỏ hoàn toàn loại segment này.
+    - Kịch bản cốt truyện chính phải được kể HOÀN TOÀN LIÊN TỤC từ đầu đến cuối (Hook -> các segment Story liên tục).
+    - TUYỆT ĐỐI KHÔNG xen kẽ bình luận (Comment) vào giữa các phân đoạn câu chuyện chính.
+    - Toàn bộ các bình luận (Comment) phải được xếp LIÊN TIẾP và đặt ở phần CUỐI của kịch bản (ngay sau phân đoạn cốt truyện chính cuối cùng và ngay trước phân đoạn Ending).
+    - Dịch các comment tự nhiên sang tiếng Việt, có thể lược bớt để ngắn gọn nhưng GIỮ NGUYÊN cảm xúc thô mộc, chân thực của internet (ví dụ phản ứng giận dữ, bênh vực, khuyên nhủ). KHÔNG viết tóm tắt robot.
+    - Xưng hô trong comment phải tự nhiên và phù hợp với giới tính/vai vế của người viết/người đọc (ví dụ: dùng "chủ thớt", "bạn", "OP" hoặc gọi thân mật "em", "chị", "chủ post", "ông này", "bà này" tùy ngữ cảnh câu chuyện).
 
-OUTPUT STRUCTURE:
-Bạn PHẢI trả về duy nhất một đối tượng JSON khớp chính xác với cấu trúc dưới đây.
-Cấu trúc thứ tự BẮT BUỘC: Hook -> Story_1 -> Story_2 -> ... -> Ending -> Comment_1 -> Comment_2 
-KHÔNG thêm bất kỳ văn bản giải thích nào ngoài JSON. KHÔNG kèm theo lời giới thiệu hay ghi chú.
+    OUTPUT STRUCTURE:
+    Bạn PHẢI trả về duy nhất một đối tượng JSON khớp chính xác với cấu trúc dưới đây.
+    Cấu trúc thứ tự BẮT BUỘC: Hook -> Story_1 -> Story_2 -> ... -> Ending -> Comment_1 -> Comment_2 
+    KHÔNG thêm bất kỳ văn bản giải thích nào ngoài JSON. KHÔNG kèm theo lời giới thiệu hay ghi chú.
 
-\`\`\`json
-{
-  "segments": [
+    \`\`\`json
     {
-      "id": "hook",
-      "type": "hook",
-      "text": "Tôi thật sự chết lặng khi phát hiện ra bí mật mà chồng tôi giấu kín suốt 5 năm qua..."
-    },
-    {
-      "id": "story_1",
-      "type": "story",
-      "text": "Mọi chuyện bắt đầu từ lúc..."
-    },
-    {
-      "id": "story_2",
-      "type": "story",
-      "text": "Anh ấy nói rằng mọi chuyện chỉ là hiểu lầm..."
-    },
-    {
-      "id": "ending",
-      "type": "ending",
-      "text": "Có lẽ tôi chưa từng thật sự biết anh ấy là ai..."
-    },
-    {
-      "id": "comment_1",
-      "type": "comment",
-      "text": "Anh ấy đang thao túng tâm lý bạn đấy, chạy ngay đi!"
-    },
-    {
-      "id": "comment_2",
-      "type": "comment",
-      "text": "Thương chủ thớt quá, mong bạn sớm vượt qua giai đoạn khó khăn này..."
-    },
-  ]
-}
-\`\`\`
+      "segments": [
+        {
+          "id": "hook",
+          "type": "hook",
+          "text": "Tôi thật sự chết lặng khi phát hiện ra bí mật mà chồng tôi giấu kín suốt 5 năm qua..."
+        },
+        {
+          "id": "story_1",
+          "type": "story",
+          "text": "Mọi chuyện bắt đầu từ lúc..."
+        },
+        {
+          "id": "story_2",
+          "type": "story",
+          "text": "Anh ấy nói rằng mọi chuyện chỉ là hiểu lầm..."
+        },
+        {
+          "id": "ending",
+          "type": "ending",
+          "text": "Có lẽ tôi chưa từng thật sự biết anh ấy là ai..."
+        },
+        {
+          "id": "comment_1",
+          "type": "comment",
+          "text": "Anh ấy đang thao túng tâm lý bạn đấy, chạy ngay đi!"
+        },
+        {
+          "id": "comment_2",
+          "type": "comment",
+          "text": "Thương chủ thớt quá, mong bạn sớm vượt qua giai đoạn khó khăn này..."
+        },
+      ]
+    }
+    \`\`\`
 
-Các giá trị hợp lệ cho trường "type": 'hook' | 'story' | 'comment' | 'ending' | 'question' | 'reveal'`;
+    Các giá trị hợp lệ cho trường "type": 'hook' | 'story' | 'comment' | 'ending' | 'question' | 'reveal'`;
 
   const systemPrompt = `${promptConfig.systemPrompt}\nYou are a strict Vietnamese JSON producer. Output ONLY a valid JSON matching the schema, with NO markdown formatting other than raw JSON block, NO descriptions, and NO conversational text.`;
 
