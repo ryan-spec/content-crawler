@@ -13,13 +13,28 @@ export interface StoryPaths {
   render: string;
 }
 
+const getDDMMYYString = (): string => {
+  const date = new Date();
+  const d = String(date.getDate()).padStart(2, '0');
+  const m = String(date.getMonth() + 1).padStart(2, '0');
+  const y = String(date.getFullYear()).slice(-2);
+  return `${d}${m}${y}`;
+};
+
 /**
  * Dynamically resolves all sub-directories and file paths for a specific story.
  */
-export const getStoryPaths = (storyId: string): StoryPaths => {
+export const getStoryPaths = (storyId: string, subfolder: string = ''): StoryPaths => {
   // Use config.folders.data/stories if stories folder path is not explicitly set in config
   const baseStoriesDir = (config.folders as any).stories || path.join(config.folders.data, 'stories');
-  const storyDir = path.join(baseStoriesDir, storyId);
+  
+  let storyDir: string;
+  if (subfolder) {
+    const dateFolder = getDDMMYYString();
+    storyDir = path.join(baseStoriesDir, dateFolder, subfolder, storyId);
+  } else {
+    storyDir = path.join(baseStoriesDir, storyId);
+  }
 
   return {
     base: storyDir,
@@ -35,8 +50,8 @@ export const getStoryPaths = (storyId: string): StoryPaths => {
 /**
  * Automatically creates the entire folder structure for a story if it doesn't exist.
  */
-export const setupStoryDirectories = async (storyId: string): Promise<StoryPaths> => {
-  const paths = getStoryPaths(storyId);
+export const setupStoryDirectories = async (storyId: string, subfolder: string = ''): Promise<StoryPaths> => {
+  const paths = getStoryPaths(storyId, subfolder);
 
   try {
     await fs.ensureDir(paths.base);

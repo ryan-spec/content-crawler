@@ -18,7 +18,7 @@ export interface Story {
   comments?: RedditComment[];
 }
 
-export type SegmentType = 'hook' | 'story' | 'transition' | 'comment' | 'ending' | 'question' | 'reveal';
+export type SegmentType = 'hook' | 'setup' | 'tension' | 'conflict' | 'twist' | 'confrontation' | 'comment' | 'aftermath' | 'ending' | 'reflection' | 'story' | 'transition' | 'question' | 'reveal';
 
 export interface StorySegment {
   id: string;

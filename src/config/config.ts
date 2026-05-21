@@ -16,7 +16,12 @@ export const config = {
     speed: process.env.FPT_SPEED || '0',
   },
   cronSchedule: process.env.CRON_SCHEDULE || '*/30 * * * *',
+  cronScheduleShort: process.env.CRON_SCHEDULE_SHORT || process.env.CRON_SCHEDULE || '*/30 * * * *',
+  cronScheduleLong: process.env.CRON_SCHEDULE_LONG || '*/45 * * * *',
+  enableShortForm: process.env.ENABLE_SHORT_FORM ? process.env.ENABLE_SHORT_FORM === 'true' : true,
+  enableLongForm: process.env.ENABLE_LONG_FORM ? process.env.ENABLE_LONG_FORM === 'true' : true,
   maxStoriesPerRun: parseInt(process.env.MAX_STORIES_PER_RUN || '3', 10),
+  maxLongFormStoriesPerRun: parseInt(process.env.MAX_LONG_FORM_STORIES_PER_RUN || '1', 10),
   
   // Folders relative to project root
   folders: {

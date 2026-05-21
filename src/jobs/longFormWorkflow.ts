@@ -3,67 +3,60 @@ import fs from 'fs-extra';
 import { Story, FinalOutput, StorySegment, TimelineItem } from '../types';
 import { detectCategory } from '../services/analysis/categoryDetector';
 import { calculateViralScore, isViralEnough } from '../services/analysis/viralScorer';
-import { shouldUseComments } from '../services/analysis/commentDecision';
-import { generateStorySegments } from '../services/ai/segmentGenerator';
+import { generateLongFormStorySegments } from '../services/ai/longFormGenerator';
 import { setupStoryDirectories } from '../utils/storyDirManager';
 import { estimateSegmentDuration, generateSRT } from '../services/generation/subtitleService';
 import { generateAudio, getVoiceConfigForSegmentType } from '../services/ttsService';
-import { config } from '../config/config';
 import { logger } from '../utils/logger';
 import { duplicateHandler } from '../utils/duplicateHandler';
 
-export const processSingleStory = async (story: Story): Promise<boolean> => {
-  logger.info(`[Workflow] Starting Segment-Based Pipeline for story: ${story.id} - "${story.title}"`);
+export const processSingleLongFormStory = async (story: Story): Promise<boolean> => {
+  logger.info(`[Long Form Workflow] Starting Long-Form Pipeline for story: ${story.id} - "${story.title}"`);
 
   try {
     // 1. Duplicate detection
     if (duplicateHandler.isTooSimilar(story.title, 0.6)) {
-      logger.info(`[Workflow] Skipped ${story.id}: Too similar to an already processed story.`);
+      logger.info(`[Long Form Workflow] Skipped ${story.id}: Too similar to an already processed story.`);
       return false;
     }
 
     // 2. Category detection
-    logger.info(`[Workflow] Detecting category for ${story.id}...`);
+    logger.info(`[Long Form Workflow] Detecting category for ${story.id}...`);
     const categoryResult = await detectCategory(story.title, story.content, story.subreddit);
     if (!categoryResult) {
-      logger.warn(`[Workflow] Category detection failed for ${story.id}. Skipping story.`);
+      logger.warn(`[Long Form Workflow] Category detection failed for ${story.id}. Skipping story.`);
       return false;
     }
 
     // 3. Viral Scorer
     const viralScore = calculateViralScore(story, categoryResult);
     if (!isViralEnough(viralScore)) {
-      logger.info(`[Workflow] Skipped ${story.id}: Low viral score (${viralScore}).`);
+      logger.info(`[Long Form Workflow] Skipped ${story.id}: Low viral score (${viralScore}).`);
       return false;
     }
 
-    // 4. Initialize segment-based folders: data/stories/short/{story_id}
-    logger.info(`[Workflow] Provisioning stories directory architecture for story: ${story.id}...`);
-    const storyPaths = await setupStoryDirectories(story.id, 'short');
+    // 4. Initialize segment-based folders: data/stories/long/{story_id}
+    logger.info(`[Long Form Workflow] Provisioning stories directory architecture for story: ${story.id}...`);
+    const storyPaths = await setupStoryDirectories(story.id, 'long');
 
     // 5. Save Raw Reddit Data to raw/story.json
     const rawStoryPath = path.join(storyPaths.raw, 'story.json');
     await fs.writeJson(rawStoryPath, story, { spaces: 2 });
-    logger.info(`[Workflow] Raw Reddit story saved to ${rawStoryPath}`);
+    logger.info(`[Long Form Workflow] Raw Reddit story saved to ${rawStoryPath}`);
 
-    // 6. Comment decision system
-    const useComments = shouldUseComments(story);
-    logger.info(`[Workflow] Story ${story.id} - Should use community comments? ${useComments}`);
-
-    // 7. Generate Vietnamese Story Segments
-    logger.info(`[Workflow] Generating story segments via LLM for story: ${story.id}...`);
-    const rawSegments = await generateStorySegments(story, useComments);
+    // 6. Generate Vietnamese Long-Form Story Segments
+    logger.info(`[Long Form Workflow] Generating long-form story segments via LLM for story: ${story.id}...`);
+    const rawSegments = await generateLongFormStorySegments(story);
     if (!rawSegments || rawSegments.length === 0) {
-      logger.error(`[Workflow] Failed to generate valid segments for story: ${story.id}. Skipping.`);
+      logger.error(`[Long Form Workflow] Failed to generate valid segments for story: ${story.id}. Skipping.`);
       return false;
     }
 
     // Map segments, assign TTS voice/speed and write to processed/segments.json
-    const processedSegments: StorySegment[] = rawSegments.map((seg, idx) => {
+    const processedSegments: StorySegment[] = rawSegments.map((seg) => {
       const ttsConfig = getVoiceConfigForSegmentType(seg.type);
       return {
         ...seg,
-        // Unique index-based id for clear file mapping if desired, but keep original id structure
         voice: ttsConfig.voice,
         speed: ttsConfig.speed
       };
@@ -71,10 +64,10 @@ export const processSingleStory = async (story: Story): Promise<boolean> => {
 
     const segmentsJsonPath = path.join(storyPaths.processed, 'segments.json');
     await fs.writeJson(segmentsJsonPath, { segments: processedSegments }, { spaces: 2 });
-    logger.info(`[Workflow] Processed segments saved to ${segmentsJsonPath}`);
+    logger.info(`[Long Form Workflow] Processed segments saved to ${segmentsJsonPath}`);
 
-    // 8. Generate separate Audio & synced Subtitle files per segment
-    logger.info(`[Workflow] Generating audio and synced subtitles for ${processedSegments.length} segments...`);
+    // 7. Generate separate Audio & synced Subtitle files per segment
+    logger.info(`[Long Form Workflow] Generating audio and synced subtitles for ${processedSegments.length} segments...`);
     const timelineItems: TimelineItem[] = [];
 
     for (let i = 0; i < processedSegments.length; i++) {
@@ -88,10 +81,10 @@ export const processSingleStory = async (story: Story): Promise<boolean> => {
       const srtPath = path.join(storyPaths.subtitles, srtFilename);
 
       // Generate separate TTS audio for this segment
-      logger.info(`[Workflow] Generating segment TTS [${i + 1}/${processedSegments.length}]: ${segment.id}`);
+      logger.info(`[Long Form Workflow] Generating segment TTS [${i + 1}/${processedSegments.length}]: ${segment.id}`);
       const ttsSuccess = await generateAudio(segment.text, audioPath, segment.voice, segment.speed);
       if (!ttsSuccess) {
-        logger.warn(`[Workflow] TTS generation failed for segment ${segment.id}, writing placeholders/continuing.`);
+        logger.warn(`[Long Form Workflow] TTS generation failed for segment ${segment.id}, writing placeholders/continuing.`);
       }
 
       // Sync SRT subtitles and estimate duration
@@ -114,12 +107,12 @@ export const processSingleStory = async (story: Story): Promise<boolean> => {
       await new Promise(res => setTimeout(res, 1000));
     }
 
-    // 9. Save Compiled metadata/timeline.json
+    // 8. Save Compiled metadata/timeline.json
     const timelineJsonPath = path.join(storyPaths.metadata, 'timeline.json');
     await fs.writeJson(timelineJsonPath, timelineItems, { spaces: 2 });
-    logger.info(`[Workflow] Compilation timeline saved to ${timelineJsonPath}`);
+    logger.info(`[Long Form Workflow] Compilation timeline saved to ${timelineJsonPath}`);
 
-    // 10. Generate and save master FinalOutput json to traditional metadata location for external trackers
+    // 9. Generate and save master FinalOutput json to traditional metadata location for external trackers
     const finalOutput: FinalOutput = {
       story_id: story.id,
       subreddit: story.subreddit || 'unknown',
@@ -131,20 +124,20 @@ export const processSingleStory = async (story: Story): Promise<boolean> => {
       timeline: timelineItems,
       story_folder: storyPaths.base,
       youtube_title: story.title,
-      thumbnail_text: 'DRAMA'
+      thumbnail_text: 'LONG DRAMA'
     };
 
     const storyMetadataPath = path.join(storyPaths.metadata, 'story_metadata.json');
     await fs.writeJson(storyMetadataPath, finalOutput, { spaces: 2 });
-    logger.info(`[Workflow] Unified story metadata catalogued at ${storyMetadataPath}`);
+    logger.info(`[Long Form Workflow] Unified story metadata catalogued at ${storyMetadataPath}`);
 
-    // 11. Register success and mark as processed in Jaccard similarity cache
+    // 10. Register success and mark as processed in Jaccard similarity cache
     duplicateHandler.markProcessed(story.id, story.title);
-    logger.info(`[Workflow] SUCCESSFULLY completed segment-based pipeline for ${story.id}!\n`);
+    logger.info(`[Long Form Workflow] SUCCESSFULLY completed long-form segment-based pipeline for ${story.id}!\n`);
 
     return true;
   } catch (error) {
-    logger.error(`[Workflow] Critical error processing story ${story.id}:`, error);
+    logger.error(`[Long Form Workflow] Critical error processing story ${story.id}:`, error);
     return false;
   }
 };

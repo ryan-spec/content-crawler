@@ -2,26 +2,44 @@ import cron from 'node-cron';
 import { config } from './config/config';
 import { logger } from './utils/logger';
 import { setupDirectories } from './utils/fileSystem';
-import { runAutomationCycle } from './jobs/queueManager';
+import { runAutomationCycle, runLongFormAutomationCycle } from './jobs/queueManager';
 
 const start = async () => {
   try {
     // 1. Init folders
     await setupDirectories();
 
-    logger.info('YouTube Shorts V2 Automation Service Started');
-    logger.info(`Cron Schedule: ${config.cronSchedule}`);
-    logger.info(`Max Stories per run: ${config.maxStoriesPerRun}`);
+    logger.info('YouTube Shorts V2 & Long-Form TikTok Storytelling Automation Service Started');
+    logger.info(`Short-Form Enabled: ${config.enableShortForm} (Cron: ${config.cronScheduleShort}, Max: ${config.maxStoriesPerRun})`);
+    logger.info(`Long-Form Enabled: ${config.enableLongForm} (Cron: ${config.cronScheduleLong}, Max: ${config.maxLongFormStoriesPerRun})`);
 
-    // Optional: Run once on startup to verify everything works
-    logger.info('Triggering initial run on startup...');
-    runAutomationCycle().catch(err => logger.error('Initial Job Error:', err));
+    // 2. Trigger initial runs on startup (if enabled)
+    if (config.enableShortForm) {
+      logger.info('Triggering initial Short-Form run on startup...');
+      runAutomationCycle().catch(err => logger.error('Initial Short-Form Job Error:', err));
+    }
+    if (config.enableLongForm) {
+      // Delay starting the long-form run slightly to avoid startup collision
+      setTimeout(() => {
+        logger.info('Triggering initial Long-Form run on startup...');
+        runLongFormAutomationCycle().catch(err => logger.error('Initial Long-Form Job Error:', err));
+      }, 5000);
+    }
 
-    // 3. Schedule Job
-    cron.schedule(config.cronSchedule, () => {
-      logger.info('Cron triggered!');
-      runAutomationCycle().catch(err => logger.error('Job Error:', err));
-    });
+    // 3. Schedule Jobs
+    if (config.enableShortForm) {
+      cron.schedule(config.cronScheduleShort, () => {
+        logger.info('Short-Form Cron triggered!');
+        runAutomationCycle().catch(err => logger.error('Short-Form Job Error:', err));
+      });
+    }
+
+    if (config.enableLongForm) {
+      cron.schedule(config.cronScheduleLong, () => {
+        logger.info('Long-Form Cron triggered!');
+        runLongFormAutomationCycle().catch(err => logger.error('Long-Form Job Error:', err));
+      });
+    }
 
   } catch (error) {
     logger.error('Failed to start application', error);

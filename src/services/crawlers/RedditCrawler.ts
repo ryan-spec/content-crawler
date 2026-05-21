@@ -8,7 +8,11 @@ const REDDIT_SUBREDDITS = [
   'confession',
   'relationship_advice',
   'tifu',
-  'TrueOffMyChest'
+  'TrueOffMyChest',
+  'cheating_stories',
+  'JUSTNOMIL',
+  'raisedbynarcissists',
+  'nosleep'
 ];
 
 export class RedditCrawler extends BaseCrawler {
@@ -80,7 +84,11 @@ export class RedditCrawler extends BaseCrawler {
     return clean;
   }
 
-  async fetchTopStories(limit: number = 10): Promise<Story[]> {
+  async fetchTopStories(
+    limit: number = 10,
+    filterFn?: (story: Story) => boolean,
+    fetchComments: boolean = true
+  ): Promise<Story[]> {
     const allStories: Story[] = [];
 
     for (const subreddit of REDDIT_SUBREDDITS) {
@@ -122,60 +130,69 @@ export class RedditCrawler extends BaseCrawler {
       }
     }
 
+    // Filter first if filterFn is provided
+    let candidateStories = allStories;
+    if (filterFn) {
+      candidateStories = allStories.filter(filterFn);
+      logger.info(`Filtered candidates: ${candidateStories.length} out of ${allStories.length} stories matched criteria.`);
+    }
+
     // Shuffle and limit
-    const selectedStories = allStories.sort(() => 0.5 - Math.random()).slice(0, limit);
+    const selectedStories = candidateStories.sort(() => 0.5 - Math.random()).slice(0, limit);
 
-    // Fetch comments for the selected stories
-    for (const story of selectedStories) {
-      try {
-        const commentsUrl = `${story.url.replace(/\/$/, '')}.json?sort=top&limit=50`;
-        logger.info(`Fetching comments for story ${story.id}`);
-        const response = await axios.get(commentsUrl, {
-          headers: {
-            'User-Agent': 'NodeJS:ContentCrawler:v1.0.0 (by /u/AutomationBot)'
+    // Fetch comments for the selected stories if requested
+    if (fetchComments) {
+      for (const story of selectedStories) {
+        try {
+          const commentsUrl = `${story.url.replace(/\/$/, '')}.json?sort=top&limit=50`;
+          logger.info(`Fetching comments for story ${story.id}`);
+          const response = await axios.get(commentsUrl, {
+            headers: {
+              'User-Agent': 'NodeJS:ContentCrawler:v1.0.0 (by /u/AutomationBot)'
+            }
+          });
+
+          const commentsData = response.data[1]?.data?.children || [];
+          const extractedComments = [];
+          let opReplyCount = 0;
+
+          for (const c of commentsData) {
+            if (c.kind !== 't1') continue; // Only process actual comments
+            const comment = c.data;
+            
+            const cleanedBody = this.cleanAndValidateComment(comment.body);
+            if (!cleanedBody) continue; // Skip comment if it lacks clean text or is invalid
+            
+            if (comment.author === story.author && opReplyCount < 3) {
+              extractedComments.push({
+                author: comment.author,
+                score: comment.score,
+                body: cleanedBody,
+                is_op_reply: true
+              });
+              opReplyCount++;
+            } else if (extractedComments.length < 5) {
+              extractedComments.push({
+                author: comment.author,
+                score: comment.score,
+                body: cleanedBody,
+                is_op_reply: false
+              });
+            }
+
+            if (extractedComments.length >= 8) break; // Max 8 comments per story
           }
-        });
-
-        const commentsData = response.data[1]?.data?.children || [];
-        const extractedComments = [];
-        let opReplyCount = 0;
-
-        for (const c of commentsData) {
-          if (c.kind !== 't1') continue; // Only process actual comments
-          const comment = c.data;
           
-          const cleanedBody = this.cleanAndValidateComment(comment.body);
-          if (!cleanedBody) continue; // Skip comment if it lacks clean text or is invalid
-          
-          if (comment.author === story.author && opReplyCount < 3) {
-            extractedComments.push({
-              author: comment.author,
-              score: comment.score,
-              body: cleanedBody,
-              is_op_reply: true
-            });
-            opReplyCount++;
-          } else if (extractedComments.length < 5) {
-            extractedComments.push({
-              author: comment.author,
-              score: comment.score,
-              body: cleanedBody,
-              is_op_reply: false
-            });
-          }
+          // Sort by score
+          story.comments = extractedComments.sort((a, b) => b.score - a.score);
 
-          if (extractedComments.length >= 8) break; // Max 8 comments per story
+        } catch (error) {
+          logger.error(`Failed to fetch comments for story ${story.id}`, error);
         }
         
-        // Sort by score
-        story.comments = extractedComments.sort((a, b) => b.score - a.score);
-
-      } catch (error) {
-        logger.error(`Failed to fetch comments for story ${story.id}`, error);
+        // Delay to respect Reddit rate limits
+        await new Promise(res => setTimeout(res, 1000));
       }
-      
-      // Delay to respect Reddit rate limits
-      await new Promise(res => setTimeout(res, 1000));
     }
 
     return selectedStories;
