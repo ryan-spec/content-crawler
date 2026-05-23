@@ -164,8 +164,8 @@ CRITICAL TRANSLATION & NARRATION RULES (QUY TẮC BẮT BUỘC):
   * The story MUST feel like a real Reddit confession/storytelling post.
   * DO NOT write like a novel, poetry, philosophical writing, Netflix drama, or fanfiction.
   * The narration should feel like someone casually but emotionally telling a real experience online.
-  * PRIORITIZE: realistic scenes, awkward interactions, believable dialogue, uncomfortable silence, small human details, emotional realism, grounded storytelling.
-  * AVOID: dramatic metaphors, excessive inner monologue, philosophical sadness, constant emotional descriptions, repetitive trauma narration, overly cinematic writing, unrealistic coincidences, soap opera twists, celebrity family reveals, giant plot twists every segment.
+  * PRIORITIZE SCENE-BASED STORYTELLING: Write immersive, cinematic, and conversational scenes instead of bullet point recaps or fact dumping. Show realistic scenes, awkward interactions, believable dialogue, uncomfortable silence, small human details, emotional realism.
+  * AVOID: dramatic metaphors, excessive inner monologue, philosophical sadness, repetitive trauma narration, unrealistic coincidences, soap opera twists, celebrity family reveals, giant plot twists every segment.
   * The story should revolve around ONE main emotional conflict only. Do NOT keep introducing new dramatic reveals.
   * GOOD REDDIT DRAMA: family tension, awkward dinners, passive aggressive parents, uncomfortable phone calls, discovering old letters/photos/messages, silent resentment, emotional neglect, betrayal, realistic arguments.
   * BAD DRAMA: everyone is secretly famous, unrealistic DNA reveals, constant screaming, multiple giant twists, overly evil characters, anime-style emotional writing.
@@ -190,8 +190,14 @@ CRITICAL TRANSLATION & NARRATION RULES (QUY TẮC BẮT BUỘC):
   * Do NOT make every segment equally dramatic.
   * Some scenes should feel: quiet, awkward, casual, emotionally restrained, uncomfortable.
   * Build tension slowly and naturally. The story should feel messy, human, imperfect, believable.
+- HOOK RULES (If Segment Type is 'hook'):
+  * The hook MUST be 1-2 short lines.
+  * Create tension immediately (conflict-first).
+  * Do NOT summarize the entire story. Avoid over-explaining.
+  * Must sound like high-retention TikTok storytelling (e.g. "Con gái lớn của tôi... ghét chính em ruột mình.", "Mọi thứ bùng nổ... chỉ vì một chuyến du lịch.").
 - TRANSLATION & FORMATTING:
-  * Translate slang and internet phrases naturally into Vietnamese (e.g. "gaslighting" -> "thao túng tâm lý", "red flag" -> "dấu hiệu độc hại", "creepy" -> "rợn người", "loser" -> "thảm hại", "karma hit him" -> "quả báo").
+  * Translate slang and internet phrases naturally into Vietnamese (e.g. "gaslighting" -> "thao túng tâm lý", "red flag" -> "dấu hiệu độc hại", "creepy" -> "rợn người", "loser" -> "thảm hại", "karma hit him" -> "quả báo", "đổ lỗi cho chính mình" -> "tự chịu trách nhiệm" / "đó là hậu quả do nó tự chọn").
+  * AITA TRANSLATION: NEVER translate "AITA" or "Am I The Asshole" to "kẻ lừa đảo". Use natural phrases like "Tôi có quá đáng không?", "Tôi có sai không?", "Tôi có tệ quá không?".
   * Use "..." for natural human rhythm, pauses, and incomplete thoughts.
   * Length: This segment MUST be between 80 to 150 Vietnamese words.
   * NO internet reactions or audience commentary. Focus 100% on the story.

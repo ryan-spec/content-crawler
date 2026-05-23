@@ -166,6 +166,7 @@ export const generateStorySegments = async (story: Story, useComments: boolean):
     ${promptConfig.styleInstructions}
 
     QUY TẮC BẮT BUỘC:
+    - HOOK RULES: Segment type "hook" phải ngắn gọn (1-2 câu), tập trung vào xung đột/drama ngay lập tức, khơi gợi sự tò mò và mang tính điện ảnh (cinematic). KHÔNG tóm tắt toàn bộ câu chuyện.
     - Toàn bộ nội dung kể chuyện (trường "text") phải bằng tiếng Việt thuần túy. KHÔNG dùng từ tiếng Anh.
     - QUY TẮC DỊCH THUẬT QUAN HỆ & GIỚI TÍNH:
       - "boyfriend" hoặc "bf" trong câu chuyện gốc PHẢI được dịch đúng là "bạn trai" hoặc "người yêu" (tuyệt đối KHÔNG được dịch thành "anh trai", "em trai", "bố").
@@ -184,11 +185,14 @@ export const generateStorySegments = async (story: Story, useComments: boolean):
         * "clingy" -> "bám người quá mức".
         * "awkward silence" -> "im lặng đến ngượng".
         * "walked all over me" -> "coi tôi như trò hề", "chà đạp lên tôi".
+        * "đổ lỗi cho chính mình" -> "tự chịu trách nhiệm", "đó là hậu quả do nó tự chọn".
+      - AITA TRANSLATION: TUYỆT ĐỐI KHÔNG dịch "AITA" hoặc "Am I The Asshole" là "kẻ lừa đảo". PHẢI dịch tự nhiên thành: "Tôi có quá đáng không?", "Tôi có sai không?", "Tôi có tệ quá không?".
       - Luôn xác định tông giọng (tone), cảm xúc và bối cảnh xã hội/mối quan hệ để dịch thoát ý tự nhiên, mượt mà và thân thiện với người xem TikTok Việt Nam.
     - Sử dụng xưng hô linh hoạt và tự nhiên: Khi dẫn chuyện (narrator) thì dùng ngôi thứ nhất ("Tôi" hoặc "Mình"). Tuy nhiên, trong các câu thoại, tương tác, hoặc khi nhắc đến nhân vật khác, PHẢI dùng các đại từ xưng hô tiếng Việt tự nhiên và đúng ngữ cảnh giới tính/độ tuổi/mối quan hệ của câu chuyện gốc (ví dụ: "anh" - "em", "vợ" - "chồng", "tao" - "mày"). Tuyệt đối không lạm dụng "Tôi" hay "Mình" máy móc trong các câu thoại trực tiếp hoặc gián tiếp dẫn đến hiểu sai nghĩa câu chuyện gốc (ví dụ: Boyfriend hỏi Girlfriend "Em có nghĩ anh béo không?" chứ không được viết là "Em có nghĩ mình béo không?").
     - Dùng dấu ba chấm "..." để tạo các nhịp dừng tự nhiên và tăng độ tò mò.
     - Câu nói tự nhiên như văn nói, KHÔNG viết như báo chí hay báo cáo.
     - Tránh các từ sáo rỗng/robot: "bàng hoàng", "kinh hoàng", "gây sốc", "tóm lại", "tóm tắt".
+    - PRIORITIZE SCENE-BASED STORYTELLING: Viết các phân cảnh điện ảnh (cinematic), nhập vai và hội thoại thay vì tóm tắt kiểu gạch đầu dòng (bullet point recaps) hay liệt kê sự kiện (fact dumping). Tập trung vào các tương tác gượng gạo, sự im lặng khó chịu, chi tiết nhỏ của con người.
     - Kịch bản được phân rã thành các scene/segment ngắn có nhịp độ dồn dập (pacing).
     - Mỗi segment có "text" khoảng 15-40 từ để giữ nhịp ngắn, dễ đọc và tạo phụ đề snappy.
 
@@ -198,6 +202,7 @@ export const generateStorySegments = async (story: Story, useComments: boolean):
     - TUYỆT ĐỐI KHÔNG xen kẽ bình luận (Comment) vào giữa các phân đoạn câu chuyện chính.
     - Toàn bộ các bình luận (Comment) phải được xếp LIÊN TIẾP và đặt ở phần CUỐI của kịch bản (ngay sau phân đoạn cốt truyện chính cuối cùng và ngay trước phân đoạn Ending).
     - Dịch các comment tự nhiên sang tiếng Việt, có thể lược bớt để ngắn gọn nhưng GIỮ NGUYÊN cảm xúc thô mộc, chân thực của internet (ví dụ phản ứng giận dữ, bênh vực, khuyên nhủ). KHÔNG viết tóm tắt robot.
+    - COMMENT STYLE: Comment phải RẤT NGẮN GỌN (1-2 câu), phong cách internet, cảm xúc mạnh, "punchy" và chân thực (ví dụ: "Con bé cần tỉnh ra thôi", thay vì "Nếu cô ấy không muốn giàu, cứ để nó nghèo đi").
     - Xưng hô trong comment phải tự nhiên và phù hợp với giới tính/vai vế của người viết/người đọc (ví dụ: dùng "chủ thớt", "bạn", "OP" hoặc gọi thân mật "em", "chị", "chủ post", "ông này", "bà này" tùy ngữ cảnh câu chuyện).
 
     OUTPUT STRUCTURE:

@@ -11,37 +11,39 @@ const FPT_API_URL = 'https://api.fpt.ai/hmi/tts/v5';
 // Sleep utility
 const delay = (ms: number) => new Promise(res => setTimeout(res, ms));
 
+let lastCommentVoiceIndex = -1;
+const COMMENT_VOICES = ['leminh', 'thuminh', 'giahuy', 'linhsan'];
+
 /**
  * Returns the best voice and speed configuration for a given segment type.
  * Automatically switches voice based on default voice in config to create male/female contrast!
  */
 export const getVoiceConfigForSegmentType = (type: SegmentType): { voice: string; speed: string } => {
   const defaultVoice = config.fpt.voice || 'banmai';
-  const defaultSpeed = config.fpt.speed || '0';
-
-  // Determine contrasting voice (commenters get a different narrator voice)
-  let contrastingVoice = 'minhquang'; // Default male narrator contrast
-  if (defaultVoice === 'minhquang' || defaultVoice === 'leminh') {
-    contrastingVoice = 'banmai'; // Use female if default is male
-  } else {
-    contrastingVoice = 'leminh'; // Use male if default is female
-  }
+  const baseSpeedNum = parseInt(config.fpt.speed || '0', 10);
+  const storySpeed = isNaN(baseSpeedNum) ? '1' : (baseSpeedNum + 1).toString();
+  const commentSpeed = isNaN(baseSpeedNum) ? '2' : (baseSpeedNum + 2).toString();
 
   switch (type) {
     case 'hook':
     case 'reveal':
-      return { voice: defaultVoice, speed: defaultSpeed }; // Energetic opening
+      return { voice: defaultVoice, speed: storySpeed }; // Energetic opening
     case 'story':
-      return { voice: defaultVoice, speed: defaultSpeed }; // Standard storytelling
+      return { voice: defaultVoice, speed: storySpeed }; // Standard storytelling
     case 'transition':
-      return { voice: defaultVoice, speed: defaultSpeed };
+      return { voice: defaultVoice, speed: storySpeed };
     case 'comment':
-      return { voice: contrastingVoice, speed: defaultSpeed }; // Commenters get contrasting voice!
+      let nextIndex;
+      do {
+        nextIndex = Math.floor(Math.random() * COMMENT_VOICES.length);
+      } while (nextIndex === lastCommentVoiceIndex && COMMENT_VOICES.length > 1);
+      lastCommentVoiceIndex = nextIndex;
+      return { voice: COMMENT_VOICES[nextIndex], speed: commentSpeed }; // Commenters get rotating voices and faster speed
     case 'ending':
     case 'question':
       return { voice: defaultVoice, speed: '-1' }; // Slower speed for emotional ending pacing
     default:
-      return { voice: defaultVoice, speed: defaultSpeed };
+      return { voice: defaultVoice, speed: storySpeed };
   }
 };
 
