@@ -12,17 +12,18 @@ const start = async () => {
     logger.info('YouTube Shorts V2 & Long-Form TikTok Storytelling Automation Service Started');
     logger.info(`Short-Form Enabled: ${config.enableShortForm} (Cron: ${config.cronScheduleShort}, Max: ${config.maxStoriesPerRun})`);
     logger.info(`Long-Form Enabled: ${config.enableLongForm} (Cron: ${config.cronScheduleLong}, Max: ${config.maxLongFormStoriesPerRun})`);
+    logger.info(`Content Sources Enabled: ${config.sources.join(', ')} (Filter: ${config.sourceFilter})`);
 
     // 2. Trigger initial runs on startup (if enabled)
     if (config.enableShortForm) {
       logger.info('Triggering initial Short-Form run on startup...');
-      runAutomationCycle().catch(err => logger.error('Initial Short-Form Job Error:', err));
+      runAutomationCycle(config.sourceFilter).catch(err => logger.error('Initial Short-Form Job Error:', err));
     }
     if (config.enableLongForm) {
       // Delay starting the long-form run slightly to avoid startup collision
       setTimeout(() => {
         logger.info('Triggering initial Long-Form run on startup...');
-        runLongFormAutomationCycle().catch(err => logger.error('Initial Long-Form Job Error:', err));
+        runLongFormAutomationCycle(config.sourceFilter).catch(err => logger.error('Initial Long-Form Job Error:', err));
       }, 5000);
     }
 
@@ -30,14 +31,14 @@ const start = async () => {
     if (config.enableShortForm) {
       cron.schedule(config.cronScheduleShort, () => {
         logger.info('Short-Form Cron triggered!');
-        runAutomationCycle().catch(err => logger.error('Short-Form Job Error:', err));
+        runAutomationCycle(config.sourceFilter).catch(err => logger.error('Short-Form Job Error:', err));
       });
     }
 
     if (config.enableLongForm) {
       cron.schedule(config.cronScheduleLong, () => {
         logger.info('Long-Form Cron triggered!');
-        runLongFormAutomationCycle().catch(err => logger.error('Long-Form Job Error:', err));
+        runLongFormAutomationCycle(config.sourceFilter).catch(err => logger.error('Long-Form Job Error:', err));
       });
     }
 

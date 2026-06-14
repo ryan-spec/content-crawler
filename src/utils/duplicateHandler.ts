@@ -1,9 +1,19 @@
 import fs from 'fs-extra';
+import crypto from 'crypto';
 import { config } from '../config/config';
 import { logger } from './logger';
+import { Story } from '../types';
+
+interface ProcessedRecord {
+  id: string;
+  title: string;
+  source?: string;
+  hash?: string;
+  contentHash?: string;
+}
 
 export class DuplicateHandler {
-  private processedData: { id: string, title: string }[] = [];
+  private processedData: ProcessedRecord[] = [];
 
   constructor() {
     this.load();
@@ -39,6 +49,18 @@ export class DuplicateHandler {
     return this.processedData.some(item => item.id === id);
   }
 
+  public createStoryHash(source: string, title: string, url: string): string {
+    return crypto.createHash('sha256').update(`${source}${title}${url}`).digest('hex');
+  }
+
+  public getStoryContentHash(story: Story): string {
+    return story.hash || story.contentHash || this.createStoryHash(story.source, story.title, story.url);
+  }
+
+  public isContentHashProcessed(contentHash: string): boolean {
+    return this.processedData.some(item => item.hash === contentHash || item.contentHash === contentHash);
+  }
+
   // Simple Jaccard similarity for title comparison
   private getSimilarity(str1: string, str2: string): number {
     if (!str1 || !str2) return 0;
@@ -58,9 +80,9 @@ export class DuplicateHandler {
     return false;
   }
 
-  public markProcessed(id: string, title: string) {
+  public markProcessed(id: string, title: string, source?: string, contentHash?: string) {
     if (!this.isProcessed(id)) {
-      this.processedData.push({ id, title });
+      this.processedData.push({ id, title, source, hash: contentHash, contentHash });
       this.save();
     }
   }

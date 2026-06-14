@@ -15,6 +15,12 @@ export const processSingleLongFormStory = async (story: Story): Promise<boolean>
 
   try {
     // 1. Duplicate detection
+    const contentHash = duplicateHandler.getStoryContentHash(story);
+    if (duplicateHandler.isContentHashProcessed(contentHash)) {
+      logger.info(`[Long Form Workflow] Skipped ${story.id}: Duplicate content hash already processed.`);
+      return false;
+    }
+
     if (duplicateHandler.isTooSimilar(story.title, 0.6)) {
       logger.info(`[Long Form Workflow] Skipped ${story.id}: Too similar to an already processed story.`);
       return false;
@@ -132,7 +138,7 @@ export const processSingleLongFormStory = async (story: Story): Promise<boolean>
     logger.info(`[Long Form Workflow] Unified story metadata catalogued at ${storyMetadataPath}`);
 
     // 10. Register success and mark as processed in Jaccard similarity cache
-    duplicateHandler.markProcessed(story.id, story.title);
+    duplicateHandler.markProcessed(story.id, story.title, story.source, contentHash);
     logger.info(`[Long Form Workflow] SUCCESSFULLY completed long-form segment-based pipeline for ${story.id}!\n`);
 
     return true;

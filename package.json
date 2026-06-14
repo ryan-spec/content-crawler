@@ -15,7 +15,8 @@
     "axios": "^1.16.1",
     "dotenv": "^17.4.2",
     "fs-extra": "^11.3.5",
-    "node-cron": "^4.2.1"
+    "node-cron": "^4.2.1",
+    "playwright": "^1.60.0"
   },
   "devDependencies": {
     "@types/cron": "^2.0.1",

@@ -1,5 +1,6 @@
 import { callLLM } from './ollamaService';
 import { getPromptConfig } from './promptRouter';
+import { isVietnameseSource, reviewContent } from './contentReviewStage';
 import { Story, StorySegment, ProcessedStory } from '../../types';
 import { logger } from '../../utils/logger';
 
@@ -138,10 +139,71 @@ const parseLLMJSON = (rawText: string): ProcessedStory | null => {
   }
 };
 
+const buildVietnameseSegmentPrompt = (story: Story, commentsSection: string): string => {
+  return `You are a Vietnamese Segment Builder for short-form narration.
+
+The input text has already been reviewed. Your job is segmentation, not rewriting.
+
+RULES:
+- Do NOT translate.
+- Do NOT rewrite the whole story.
+- Preserve the original Vietnamese wording whenever possible.
+- Split by meaning and narration rhythm, not fixed character count only.
+- Avoid cutting a sentence in the middle.
+- Each segment should be suitable for TTS.
+- You may lightly shorten a sentence only when it is too long for narration.
+- Keep facts, emotions, and original meaning unchanged.
+- Output Vietnamese only.
+
+STORY TITLE: ${story.title}
+SOURCE: ${story.source}
+FINAL NARRATION TEXT:
+${story.content}
+${commentsSection}
+
+OUTPUT STRUCTURE:
+Return ONLY one valid JSON object. No markdown. No explanation.
+Use the same segment output format:
+{
+  "segments": [
+    {
+      "id": "hook",
+      "type": "hook",
+      "text": "..."
+    },
+    {
+      "id": "story_1",
+      "type": "story",
+      "text": "..."
+    },
+    {
+      "id": "ending",
+      "type": "ending",
+      "text": "..."
+    }
+  ]
+}
+
+Allowed type values: 'hook' | 'story' | 'comment' | 'ending' | 'question' | 'reveal'.`;
+};
+
 /**
  * Generates structured storytelling segments for a Reddit story.
  */
 export const generateStorySegments = async (story: Story, useComments: boolean): Promise<StorySegment[] | null> => {
+  const reviewResult = await reviewContent(story);
+  story.content = reviewResult.finalNarrationText;
+  story.language = reviewResult.language;
+  story.processingMode = reviewResult.processingMode;
+  story.edited = reviewResult.edited;
+  story.editReason = reviewResult.editReason;
+
+  logger.info(`[ContentReviewStage] source: ${reviewResult.source}`);
+  logger.info(`[ContentReviewStage] processingMode: ${reviewResult.processingMode}`);
+  logger.info(`[ContentReviewStage] edited: ${reviewResult.edited}`);
+  logger.info(`[ContentReviewStage] reason: ${reviewResult.editReason || 'n/a'}`);
+  logger.info(`[SegmentBuilderStage] Building segments for story: ${story.id}`);
+
   const promptConfig = getPromptConfig(story.subreddit);
 
   let commentsSection = '';
@@ -154,7 +216,9 @@ export const generateStorySegments = async (story: Story, useComments: boolean):
     commentsSection = `\n(Do not generate any comment or reaction segments. Focus 100% on the core story script itself.)\n`;
   }
 
-  const prompt = `You are a high-retention TikTok narration writer. Rewrite this Reddit story into segment-based story scenes in Vietnamese.
+  const prompt = isVietnameseSource(story.source)
+    ? buildVietnameseSegmentPrompt(story, commentsSection)
+    : `You are a high-retention TikTok narration writer. Rewrite this Reddit story into segment-based story scenes in Vietnamese.
   
     STORY TITLE: ${story.title}
     SUBREDDIT: r/${story.subreddit || 'unknown'}
@@ -249,7 +313,9 @@ export const generateStorySegments = async (story: Story, useComments: boolean):
 
     Các giá trị hợp lệ cho trường "type": 'hook' | 'story' | 'comment' | 'ending' | 'question' | 'reveal'`;
 
-  const systemPrompt = `${promptConfig.systemPrompt}\nYou are a strict Vietnamese JSON producer. Output ONLY a valid JSON matching the schema, with NO markdown formatting other than raw JSON block, NO descriptions, and NO conversational text.`;
+  const systemPrompt = isVietnameseSource(story.source)
+    ? 'You are a Vietnamese Segment Builder. Preserve the reviewed Vietnamese narration text and split it into valid JSON segments. Do not rewrite the story. Output ONLY valid JSON with no markdown and no conversational text.'
+    : `${promptConfig.systemPrompt}\nYou are a strict Vietnamese JSON producer. Output ONLY a valid JSON matching the schema, with NO markdown formatting other than raw JSON block, NO descriptions, and NO conversational text.`;
 
   logger.info(`[Segment Generator] Sending segment request to LLM for story: ${story.id}...`);
 

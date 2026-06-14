@@ -17,6 +17,12 @@ export const processSingleStory = async (story: Story): Promise<boolean> => {
 
   try {
     // 1. Duplicate detection
+    const contentHash = duplicateHandler.getStoryContentHash(story);
+    if (duplicateHandler.isContentHashProcessed(contentHash)) {
+      logger.info(`[Workflow] Skipped ${story.id}: Duplicate content hash already processed.`);
+      return false;
+    }
+
     if (duplicateHandler.isTooSimilar(story.title, 0.6)) {
       logger.info(`[Workflow] Skipped ${story.id}: Too similar to an already processed story.`);
       return false;
@@ -139,7 +145,7 @@ export const processSingleStory = async (story: Story): Promise<boolean> => {
     logger.info(`[Workflow] Unified story metadata catalogued at ${storyMetadataPath}`);
 
     // 11. Register success and mark as processed in Jaccard similarity cache
-    duplicateHandler.markProcessed(story.id, story.title);
+    duplicateHandler.markProcessed(story.id, story.title, story.source, contentHash);
     logger.info(`[Workflow] SUCCESSFULLY completed segment-based pipeline for ${story.id}!\n`);
 
     return true;

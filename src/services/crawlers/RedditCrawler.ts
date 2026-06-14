@@ -1,7 +1,9 @@
 import axios from 'axios';
+import crypto from 'crypto';
 import { BaseCrawler } from './BaseCrawler';
 import { Story } from '../../types';
 import { logger } from '../../utils/logger';
+import { config } from '../../config/config';
 
 const REDDIT_SUBREDDITS = [
   'AmItheAsshole',
@@ -16,8 +18,104 @@ const REDDIT_SUBREDDITS = [
 ];
 
 export class RedditCrawler extends BaseCrawler {
+  private accessToken: string | null = null;
+  private tokenExpiresAt = 0;
+  private lastRequestAt = 0;
+
   constructor() {
     super('reddit');
+  }
+
+  private hasRedditCredentials(): boolean {
+    return Boolean(
+      config.reddit.clientId &&
+      config.reddit.clientSecret &&
+      config.reddit.username &&
+      config.reddit.password
+    );
+  }
+
+  private sleep(ms: number): Promise<void> {
+    return new Promise(resolve => setTimeout(resolve, ms));
+  }
+
+  private async waitForRedditRequestSlot(): Promise<void> {
+    const delayMs = Math.max(config.reddit.requestDelayMs || 0, 0);
+    if (delayMs === 0) return;
+
+    const elapsed = Date.now() - this.lastRequestAt;
+    if (elapsed < delayMs) {
+      await this.sleep(delayMs - elapsed);
+    }
+
+    this.lastRequestAt = Date.now();
+  }
+
+  private async getAccessToken(): Promise<string> {
+    const now = Date.now();
+    if (this.accessToken && now < this.tokenExpiresAt) {
+      return this.accessToken;
+    }
+
+    if (!this.hasRedditCredentials()) {
+      throw new Error('Missing Reddit API credentials. Set REDDIT_CLIENT_ID, REDDIT_CLIENT_SECRET, REDDIT_USERNAME, and REDDIT_PASSWORD in .env.');
+    }
+
+    const basicAuth = Buffer.from(`${config.reddit.clientId}:${config.reddit.clientSecret}`).toString('base64');
+    const params = new URLSearchParams({
+      grant_type: 'password',
+      username: config.reddit.username,
+      password: config.reddit.password,
+    });
+
+    await this.waitForRedditRequestSlot();
+    const response = await axios.post('https://www.reddit.com/api/v1/access_token', params, {
+      headers: {
+        Authorization: `Basic ${basicAuth}`,
+        'Content-Type': 'application/x-www-form-urlencoded',
+        'User-Agent': config.reddit.userAgent,
+      },
+      timeout: 10000,
+    });
+
+    const accessToken = response.data.access_token;
+    if (!accessToken) {
+      throw new Error('Reddit did not return an access token. Check REDDIT_CLIENT_ID, REDDIT_CLIENT_SECRET, REDDIT_USERNAME, and REDDIT_PASSWORD.');
+    }
+
+    this.accessToken = accessToken;
+    this.tokenExpiresAt = now + Math.max((response.data.expires_in || 3600) - 60, 60) * 1000;
+
+    return accessToken;
+  }
+
+  private async redditGet<T = any>(url: string): Promise<T> {
+    const token = await this.getAccessToken();
+    await this.waitForRedditRequestSlot();
+    const response = await axios.get<T>(url, {
+      headers: {
+        Authorization: `Bearer ${token}`,
+        'User-Agent': config.reddit.userAgent,
+      },
+      timeout: 10000,
+    });
+
+    return response.data;
+  }
+
+  private logFetchError(context: string, error: unknown): void {
+    if (axios.isAxiosError(error)) {
+      const status = error.response?.status;
+      const statusText = error.response?.statusText;
+      logger.error(`${context}: HTTP ${status || 'unknown'}${statusText ? ` ${statusText}` : ''}`);
+      return;
+    }
+
+    logger.error(context, error);
+  }
+
+  private createStoryHash(source: string, title: string, url: string): string {
+    return crypto.createHash('sha256').update(`${source}${title}${url}`).digest('hex');
   }
 
   /**
@@ -87,46 +185,66 @@ export class RedditCrawler extends BaseCrawler {
   async fetchTopStories(
     limit: number = 10,
     filterFn?: (story: Story) => boolean,
-    fetchComments: boolean = true
+    fetchComments: boolean = true,
+    cycleLabel: string = 'Reddit'
   ): Promise<Story[]> {
     const allStories: Story[] = [];
 
+    if (!this.hasRedditCredentials()) {
+      throw new Error('OAuth credentials are missing');
+    }
+
+    const listings = [
+      { name: 'hot', path: 'hot' },
+      { name: 'top', path: 'top?t=month' },
+      { name: 'new', path: 'new' },
+    ];
+
     for (const subreddit of REDDIT_SUBREDDITS) {
-      try {
-        const url = `https://www.reddit.com/r/${subreddit}/top.json?t=month&limit=50`;
-        logger.info(`Fetching Reddit stories from r/${subreddit}`);
-        
-        const response = await axios.get(url, {
-          headers: {
-            'User-Agent': 'NodeJS:ContentCrawler:v1.0.0 (by /u/AutomationBot)'
+      for (const listing of listings) {
+        try {
+          const separator = listing.path.includes('?') ? '&' : '?';
+          const oauthUrl = `https://oauth.reddit.com/r/${subreddit}/${listing.path}${separator}limit=50`;
+          logger.info(`Fetching Reddit ${listing.name} stories from r/${subreddit}`);
+
+          const response = await this.redditGet<any>(oauthUrl);
+          const posts = response?.data?.children || [];
+
+          for (const post of posts) {
+            const data = post.data;
+
+            // Filters: no NSFW, > 500 score, content > 500 chars, avoid deleted/empty
+            if (data.over_18) continue;
+            if (data.score < 500) continue;
+            if (!data.selftext || data.selftext.length < 500) continue;
+            if (data.selftext === '[deleted]' || data.selftext === '[removed]') continue;
+
+            const url = `https://www.reddit.com${data.permalink}`;
+            const hash = this.createStoryHash(this.sourceName, data.title, url);
+
+            if (allStories.some(story => story.id === `reddit_${data.id}` || story.hash === hash)) {
+              continue;
+            }
+
+            allStories.push({
+              id: `reddit_${data.id}`,
+              source: this.sourceName,
+              category: subreddit,
+              subreddit: subreddit,
+              title: data.title,
+              content: data.selftext,
+              score: data.score,
+              author: data.author,
+              created_utc: data.created_utc,
+              createdAt: data.created_utc ? new Date(data.created_utc * 1000).toISOString() : undefined,
+              url,
+              hash,
+              contentHash: hash,
+            });
           }
-        });
-
-        const posts = response.data?.data?.children || [];
-
-        for (const post of posts) {
-          const data = post.data;
-
-          // Filters: no NSFW, > 500 score, content > 500 chars, avoid deleted/empty
-          if (data.over_18) continue;
-          if (data.score < 500) continue;
-          if (!data.selftext || data.selftext.length < 500) continue;
-          if (data.selftext === '[deleted]' || data.selftext === '[removed]') continue;
-
-          allStories.push({
-            id: `reddit_${data.id}`,
-            source: this.sourceName,
-            subreddit: subreddit,
-            title: data.title,
-            content: data.selftext,
-            score: data.score,
-            author: data.author,
-            created_utc: data.created_utc,
-            url: `https://www.reddit.com${data.permalink}`
-          });
+        } catch (error) {
+          this.logFetchError(`[${cycleLabel}] Error fetching ${listing.name} stories from r/${subreddit}`, error);
         }
-      } catch (error) {
-        logger.error(`Error fetching stories from r/${subreddit}`, error);
       }
     }
 
@@ -144,15 +262,13 @@ export class RedditCrawler extends BaseCrawler {
     if (fetchComments) {
       for (const story of selectedStories) {
         try {
-          const commentsUrl = `${story.url.replace(/\/$/, '')}.json?sort=top&limit=50`;
+          const oauthCommentsUrl = story.url
+            .replace('https://www.reddit.com', 'https://oauth.reddit.com')
+            .replace(/\/$/, '') + '?sort=top&limit=50';
           logger.info(`Fetching comments for story ${story.id}`);
-          const response = await axios.get(commentsUrl, {
-            headers: {
-              'User-Agent': 'NodeJS:ContentCrawler:v1.0.0 (by /u/AutomationBot)'
-            }
-          });
 
-          const commentsData = response.data[1]?.data?.children || [];
+          const response = await this.redditGet<any[]>(oauthCommentsUrl);
+          const commentsData = response[1]?.data?.children || [];
           const extractedComments = [];
           let opReplyCount = 0;
 
@@ -187,11 +303,10 @@ export class RedditCrawler extends BaseCrawler {
           story.comments = extractedComments.sort((a, b) => b.score - a.score);
 
         } catch (error) {
-          logger.error(`Failed to fetch comments for story ${story.id}`, error);
+          this.logFetchError(`[${cycleLabel}] Failed to fetch comments for story ${story.id}`, error);
         }
         
-        // Delay to respect Reddit rate limits
-        await new Promise(res => setTimeout(res, 1000));
+        await this.sleep(config.reddit.requestDelayMs);
       }
     }
 
